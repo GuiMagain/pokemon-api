@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pokemon-api-config
+data:
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  CACHE_TTL: "3600"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokemon-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pokemon-api
+  template:
+    metadata:
+      labels:
+        app: pokemon-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/SEU_USUARIO/pokemon-api:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: pokemon-api-config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pokemon-api
+spec:
+  type: NodePort
+  selector:
+    app: pokemon-api
+  ports:
+    - port: 80
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokemon-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pokemon-worker
+  template:
+    metadata:
+      labels:
+        app: pokemon-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/SEU_USUARIO/pokemon-api:latest
+          command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]
+          envFrom:
+            - configMapRef:
+                name: pokemon-api-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379

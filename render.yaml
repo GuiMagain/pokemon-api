@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: pokemon-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: CACHE_TTL
+        value: "3600"
+      - key: REDIS_URL
+        sync: false
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false

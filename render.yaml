@@ -5,6 +5,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: CACHE_TTL
         value: "3600"
       - key: REDIS_URL

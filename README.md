@@ -92,3 +92,31 @@ Configure em **Settings → Secrets and variables → Actions**: `RENDER_DEPLOY_
 2. Em *Environment*, defina `REDIS_URL` e `KAFKA_BOOTSTRAP_SERVERS` se tiver esses serviços (são opcionais).
 3. Copie o **Deploy Hook** do serviço e salve como secret `RENDER_DEPLOY_HOOK_URL`.
 4. Desative o auto-deploy se quiser que só o pipeline faça o deploy.
+
+## CRUD de registros
+
+Recurso `/registros`, persistido em banco relacional com SQLAlchemy.
+
+| Método | Rota | Descrição | Status |
+|---|---|---|---|
+| POST | `/registros` | Cria um registro | 201 / 409 (nome duplicado) / 422 |
+| GET | `/registros?limit=20&offset=0` | Lista paginada | 200 |
+| GET | `/registros/{id}` | Busca por id | 200 / 404 |
+| PUT | `/registros/{id}` | Atualização parcial | 200 / 404 / 409 |
+| DELETE | `/registros/{id}` | Exclui | 204 / 404 |
+
+Exemplo de criação:
+
+```bash
+curl -X POST http://localhost:8000/registros \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Pikachu", "height": 4, "weight": 60, "types": ["electric"]}'
+```
+
+Os nomes são salvos em minúsculas e não podem se repetir.
+
+### Banco de dados
+
+- Local, sem container: `DATABASE_URL=sqlite:///./pokemon.db` (padrão).
+- Com Podman: copie `.env.example` para `.env` e rode `podman compose up -d`. O Postgres sobe em um container separado.
+- No Render: crie um serviço **PostgreSQL**, copie a *Internal Database URL* e use como `DATABASE_URL` no Web Service. A URL começa com `postgres://`, e o código converte automaticamente.

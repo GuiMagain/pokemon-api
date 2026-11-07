@@ -1,19 +1,26 @@
-# Funciona com "podman compose up -d" (ou podman-compose)
+# Funciona com "podman compose up -d" (ou podman-compose).
+# As credenciais vêm do arquivo .env (copie de .env.example).
 services:
   api:
     build: .
     ports:
       - "8000:8000"
     environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       LOGSTASH_HOST: logstash
     depends_on:
-      - redis
-      - kafka
-      - logstash
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+      logstash:
+        condition: service_started
 
   worker:
     build: .
@@ -24,6 +31,22 @@ services:
       REDIS_URL: redis://redis:6379/0
     depends_on:
       - redis
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -73,3 +96,6 @@ services:
       - "5601:5601"
     depends_on:
       - elasticsearch
+
+volumes:
+  pgdata:

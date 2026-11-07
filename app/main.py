@@ -4,7 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.db import init_db
 from app.routes.pokemons import router as pokemons_router
+from app.routes.registros import router as registros_router
 from app.services import cache, events
 from app.services.pokeapi import PokeAPIError, PokemonNotFound
 from app.utils.log import setup_logging
@@ -14,6 +16,7 @@ setup_logging()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    init_db()
     yield
     await cache.close()
     await events.close()
@@ -21,10 +24,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="API Pokémon",
-    version="1.0.0",
-    description="Consome a PokeAPI e expõe dados de Pokémons paginados.",
+    version="1.1.0",
+    description="CRUD de registros de pokémons em banco relacional e consumo da PokeAPI.",
     lifespan=lifespan,
 )
+app.include_router(registros_router)
 app.include_router(pokemons_router)
 
 

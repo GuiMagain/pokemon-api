@@ -1,3 +1,8 @@
+import logging
+import time
+
+from fastapi import Request
+
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -30,6 +35,19 @@ app = FastAPI(
 )
 app.include_router(registros_router)
 app.include_router(pokemons_router)
+
+request_log = logging.getLogger("app.request")
+
+@app.middleware("http")
+async def registrar_requisicoes(request: Request, call_next):
+    inicio = time.perf_counter()
+    response = await call_next(request)
+    if request.url.path != "/health":
+        duracao_ms = round((time.perf_counter() - inicio) * 1000, 2)
+        request_log.info(
+            f"{request.method} {request.url.path} -> {response.status_code} em {duracao_ms} ms"
+        )
+    return response
 
 
 @app.exception_handler(PokemonNotFound)

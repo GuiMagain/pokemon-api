@@ -33,7 +33,7 @@ services:
       - redis
 
   db:
-    image: postgres:16-alpine
+    image: docker.io/library/postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -49,12 +49,12 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     ports:
       - "6379:6379"
 
   kafka:
-    image: apache/kafka:3.7.0
+    image: docker.io/apache/kafka:3.7.0
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -84,7 +84,7 @@ services:
     environment:
       LS_JAVA_OPTS: "-Xms256m -Xmx256m"
     volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,z
     depends_on:
       - elasticsearch
 

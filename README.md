@@ -128,8 +128,10 @@ Imagem sozinha:
 
 ```bash
 podman build -t pokemon-api .
-podman run -p 8000:8000 -e DATABASE_URL=sqlite:///./pokemon.db pokemon-api
+podman volume create pokemon-data
+podman run -p 8000:8000 -v pokemon-data:/app/data pokemon-api
 ```
+O banco SQLite fica no volume `pokemon-data`, então os dados sobrevivem a novos containers. No Fedora, se preferir uma pasta do computador, use `-v "$(pwd)/data:/app/data:Z"` (o `:Z` é necessário por causa do SELinux).
 
 Stack completa (API, worker do Celery, Postgres, Redis, Kafka, Elasticsearch, Logstash e Kibana):
 

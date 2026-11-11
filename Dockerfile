@@ -12,7 +12,12 @@ COPY app ./app
 COPY start.sh .
 RUN chmod +x start.sh
 
-RUN useradd --create-home appuser
+RUN useradd --create-home appuser \
+    && mkdir -p /app/data \
+    && chown appuser:appuser /app/data
+
+ENV DATABASE_URL=sqlite:////app/data/pokemon.db
+
 USER appuser
 
 EXPOSE 8000

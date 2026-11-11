@@ -21,7 +21,15 @@ def _buscar_ou_404(db: Session, registro_id: int) -> PokemonRecord:
     return record
 
 
-@router.post("", response_model=PokemonRegistro, status_code=status.HTTP_201_CREATED, summary="Criar registro")
+@router.post(
+    "",
+    response_model=PokemonRegistro,
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar registro",
+    responses={
+        409: {"description": "Nome já existe", "content": {"application/json": {"example": {"detail": "Já existe um pokémon com esse nome"}}}},
+    },
+)
 def criar_registro(payload: PokemonCreate, db: Session = Depends(get_db)) -> PokemonRecord:
     dados = payload.model_dump()
     dados["name"] = dados["name"].strip().lower()
@@ -60,7 +68,15 @@ def buscar_registro(registro_id: int, db: Session = Depends(get_db)) -> PokemonR
     return _buscar_ou_404(db, registro_id)
 
 
-@router.put("/{registro_id}", response_model=PokemonRegistro, summary="Atualizar registro (parcial)")
+@router.put(
+    "/{registro_id}",
+    response_model=PokemonRegistro,
+    summary="Atualizar registro (parcial)",
+    responses={
+        404: {"description": "Registro não encontrado", "content": {"application/json": {"example": {"detail": "Registro não encontrado"}}}},
+        409: {"description": "Nome já usado por outro registro", "content": {"application/json": {"example": {"detail": "Já existe um pokémon com esse nome"}}}},
+    },
+)
 def atualizar_registro(
     registro_id: int, payload: PokemonUpdate, db: Session = Depends(get_db)
 ) -> PokemonRecord:
